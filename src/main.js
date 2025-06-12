@@ -44,26 +44,54 @@ function animate() {
   renderer.render(scene, camera);
 }
 
-function initControls() {
+async function initControls() {
+  // ────────────────
+  // 1️⃣ Chrome + Edge: force the "Allow motion sensors?" prompt
+  if ('AbsoluteOrientationSensor' in window) {
+    try {
+      const sensor = new AbsoluteOrientationSensor({ frequency: 60 });
+      sensor.addEventListener('reading', () => {
+        // once we get any data, stop the sensor
+        sensor.stop();
+      });
+      sensor.addEventListener('error', (e) => {
+        // ignore the normal NotReadableError, warn only on others
+        if (e.error.name !== 'NotReadableError') {
+          console.warn('Sensor error:', e.error.name);
+        }
+      });
+      sensor.start();  // ⚡️ triggers the prompt, but won't throw
+    } catch (err) {
+      // if .start() itself is disallowed, just ignore
+      console.warn('Sensor API start failed:', err.name || err);
+    }
+  }
+
+  // ────────────────
+  // 2️⃣ iOS Safari: explicit permission API
   if (
     typeof DeviceOrientationEvent !== 'undefined' &&
     typeof DeviceOrientationEvent.requestPermission === 'function'
   ) {
-    DeviceOrientationEvent.requestPermission()
-      .then(res => {
-        if (res === 'granted') {
-          controls.connect();
-          animate();
-        } else {
-          alert('Permission denied');
-        }
-      })
-      .catch(console.error);
-  } else {
-    controls.connect();
-    animate();
+    try {
+      const res = await DeviceOrientationEvent.requestPermission();
+      if (res !== 'granted') {
+        alert('Motion permission denied');
+        return;
+      }
+    } catch (err) {
+      console.error('DeviceOrientationEvent.requestPermission failed', err);
+      return;
+    }
   }
+
+  // ────────────────
+  // 3️⃣ Finally: connect controls and start animation
+  controls.connect();
+  animate();
 }
+
+
 
 // START BUTTON
 document.getElementById('start')
