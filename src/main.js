@@ -6,12 +6,15 @@ import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
 
 document.querySelector('#app').innerHTML = `
   <button id="start">Start 360°</button>
+  <div id="counter"></div>
 `
 const scene    = new THREE.Scene();
 scene.background = new THREE.Color(0x000000);
 const camera   = new THREE.PerspectiveCamera(
   75, window.innerWidth/window.innerHeight, 0.1, 1000
 );
+camera.rotation.reorder('YXZ');
+
 camera.position.z = 5;
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -74,4 +77,11 @@ window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth/window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+
+
+window.addEventListener('deviceorientation', (e) => {
+  console.log('alpha:', e.alpha, 'beta:', e.beta, 'gamma:', e.gamma);
+  document.getElementById('counter').innerHTML = `alpha: ${e.alpha}, beta: ${e.beta}, gamma: ${e.gamma}`
 });
